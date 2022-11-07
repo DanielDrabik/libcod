@@ -1205,8 +1205,8 @@ void hook_SVC_Status(netadr_t from)
 
 void manymaps_prepare(const char *mapname, int read)
 {
-	char map_check[1024];
-	char library_path[512];
+	char map_check[MAX_OSPATH];
+	char library_path[MAX_OSPATH];
 
 	cvar_t *fs_homepath = Cvar_FindVar("fs_homepath");
 	cvar_t *fs_game = Cvar_FindVar("fs_game");
@@ -1217,7 +1217,7 @@ void manymaps_prepare(const char *mapname, int read)
 	else
 		snprintf(library_path, sizeof(library_path), "%s/%s/Library", fs_homepath->string, fs_game->string);
 
-	snprintf(map_check, sizeof(map_check), "%s/%s.iwd", library_path, mapname);
+	Com_sprintf(map_check, MAX_OSPATH, "%s/%s.iwd", library_path, mapname);
 
 #if COD_VERSION == COD2_1_0
 	const char *stock_maps[] = { "mp_breakout", "mp_brecourt", "mp_burgundy", "mp_carentan", "mp_dawnville", "mp_decoy", "mp_downtown", "mp_farmhouse", "mp_leningrad", "mp_matmata", "mp_railyard", "mp_toujane", "mp_trainstation" };
@@ -1267,8 +1267,8 @@ void manymaps_prepare(const char *mapname, int read)
 		if (strcmp(dir_ent->d_name, ".") == 0 || strcmp(dir_ent->d_name, "..") == 0)
 			continue;
 
-		char fileDelete[512];
-		snprintf(fileDelete, sizeof(fileDelete), "%s/%s/%s", fs_homepath->string, fs_game->string, dir_ent->d_name);
+		char fileDelete[MAX_OSPATH];
+		Com_sprintf(fileDelete, MAX_OSPATH, "%s/%s/%s", fs_homepath->string, fs_game->string, dir_ent->d_name);
 
 		if (access(fileDelete, F_OK) != -1)
 		{
@@ -1281,11 +1281,11 @@ void manymaps_prepare(const char *mapname, int read)
 
 	if (map_exists)
 	{
-		char src[1024];
-		char dst[512];
+		char src[MAX_OSPATH];
+		char dst[MAX_OSPATH];
 
-		snprintf(src, sizeof(src), "%s/%s.iwd", library_path, mapname);
-		snprintf(dst, sizeof(dst), "%s/%s/%s.iwd", fs_homepath->string, fs_game->string, mapname);
+		Com_sprintf(src, MAX_OSPATH, "%s/%s.iwd", library_path, mapname);
+		Com_sprintf(dst, MAX_OSPATH, "%s/%s/%s.iwd", fs_homepath->string, fs_game->string, mapname);
 
 		if (access(src, F_OK) != -1)
 		{
@@ -1319,8 +1319,8 @@ bool hook_SV_MapExists(const char *mapname)
 	}
 	else
 	{
-		char map_check[1024];
-		char library_path[512];
+		char map_check[MAX_OSPATH];
+		char library_path[MAX_OSPATH];
 
 		cvar_t *fs_homepath = Cvar_FindVar("fs_homepath");
 		cvar_t *fs_game = Cvar_FindVar("fs_game");
@@ -1329,7 +1329,7 @@ bool hook_SV_MapExists(const char *mapname)
 		else
 			snprintf(library_path, sizeof(library_path), "%s/%s/Library", fs_homepath->string, fs_game->string);
 
-		snprintf(map_check, sizeof(map_check), "%s/%s.iwd", library_path, mapname);
+		Com_sprintf(map_check, MAX_OSPATH, "%s/%s.iwd", library_path, mapname);
 
 		return access(map_check, F_OK) != -1;
 	}
