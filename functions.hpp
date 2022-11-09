@@ -408,6 +408,15 @@ static const SV_GetChallenge_t SV_GetChallenge = (SV_GetChallenge_t)0x0808D0C2;
 static const SV_GetChallenge_t SV_GetChallenge = (SV_GetChallenge_t)0x0808D18E;
 #endif
 
+typedef void (*SV_DirectConnect_t)(netadr_t from);
+#if COD_VERSION == COD2_1_0
+static const SV_DirectConnect_t SV_DirectConnect = (SV_DirectConnect_t)0x0808D0E6;
+#elif COD_VERSION == COD2_1_2
+static const SV_DirectConnect_t SV_DirectConnect = (SV_DirectConnect_t)0x0808E1EA;
+#elif COD_VERSION == COD2_1_3
+static const SV_DirectConnect_t SV_DirectConnect = (SV_DirectConnect_t)0x0808E2AA;
+#endif
+
 typedef void (*SVC_Info_t)(netadr_t from);
 #if COD_VERSION == COD2_1_0
 static const SVC_Info_t SVC_Info = (SVC_Info_t)0x08093980;
