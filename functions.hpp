@@ -453,6 +453,15 @@ static const Scr_Error_t Scr_Error = (Scr_Error_t)0x08085330;
 static const Scr_Error_t Scr_Error = (Scr_Error_t)0x080853FC;
 #endif
 
+typedef int (*Sys_MilliSeconds_t)(void);
+#if COD_VERSION == COD2_1_0
+static const Sys_MilliSeconds_t Sys_MilliSeconds = (Sys_MilliSeconds_t)0x080D3728;
+#elif COD_VERSION == COD2_1_2
+static const Sys_MilliSeconds_t Sys_MilliSeconds = (Sys_MilliSeconds_t)0x080D5C54;
+#elif COD_VERSION == COD2_1_3
+static const Sys_MilliSeconds_t Sys_MilliSeconds = (Sys_MilliSeconds_t)0x080D5D98;
+#endif
+
 typedef int (*G_FindConfigstringIndex_t)(const char *name, int start, int max, qboolean create, const char *fieldname);
 #if COD_VERSION == COD2_1_0
 static const G_FindConfigstringIndex_t G_FindConfigstringIndex = (G_FindConfigstringIndex_t)0x0811AE70;
