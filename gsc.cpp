@@ -183,6 +183,7 @@ scr_function_t scriptFunctions[] =
 	{"fwrite", gsc_utils_fwrite, 0},
 	{"fclose", gsc_utils_fclose, 0},
 	{"fsize", gsc_utils_fsize, 0},
+	{"ftime", gsc_utils_ftime, 0},
 	{"sprintf", gsc_utils_sprintf, 0},
 	{"getsystemtime", gsc_utils_getsystemtime, 0},
 	{"getserverstarttime", gsc_utils_getserverstarttime, 0},
