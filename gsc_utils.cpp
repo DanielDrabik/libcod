@@ -707,6 +707,36 @@ void gsc_utils_fsize()
 	stackPushInt( buf.st_size );
 }
 
+void gsc_utils_ftime()
+{
+	FILE *file;
+
+	if ( ! stackGetParams("i", &file))
+	{
+		stackError("gsc_utils_ftime() argument is undefined or has a wrong type");
+		stackPushUndefined();
+		return;
+	}
+
+	if (!file)
+	{
+		stackError("gsc_utils_ftime() returned a error");
+		stackPushUndefined();
+		return;
+	}
+
+	struct stat buf;
+	fstat(fileno(file), &buf);
+
+	const char *timestring = ctime(&buf.st_mtime);
+	char stripped_time[128];
+
+	strncpy(stripped_time, timestring, sizeof(stripped_time));
+	stripped_time[strlen(timestring) - 1] = '\0';
+
+	stackPushString( stripped_time );
+}
+
 // http://code.metager.de/source/xref/RavenSoftware/jediacademy/code/game/g_utils.cpp#36
 void gsc_G_FindConfigstringIndexOriginal()
 {

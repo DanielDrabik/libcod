@@ -1,8 +1,5 @@
 #include "gsc.hpp"
 
-#include <stdint.h>
-#include <sys/time.h>
-
 const char *stackGetParamTypeAsString(int param)
 {
 	if (param >= Scr_GetNumParam())
@@ -186,6 +183,7 @@ scr_function_t scriptFunctions[] =
 	{"fwrite", gsc_utils_fwrite, 0},
 	{"fclose", gsc_utils_fclose, 0},
 	{"fsize", gsc_utils_fsize, 0},
+	{"ftime", gsc_utils_ftime, 0},
 	{"sprintf", gsc_utils_sprintf, 0},
 	{"getsystemtime", gsc_utils_getsystemtime, 0},
 	{"getserverstarttime", gsc_utils_getserverstarttime, 0},
@@ -606,7 +604,7 @@ time_t sys_timeBase = 0;
 /**
  * @brief Current time in ms, using sys_timeBase as origin
  */
-uint64_t Sys_Milliseconds(void)
+uint64_t Sys_Milliseconds64(void)
 {
 	struct timeval tp;
 

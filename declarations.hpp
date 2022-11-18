@@ -1,8 +1,6 @@
 #ifndef _DECLARATIONS_HPP_
 #define _DECLARATIONS_HPP_
 
-#include <stdint.h>
-
 #define qboolean int
 #define qtrue 1
 #define qfalse 0

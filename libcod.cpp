@@ -829,13 +829,13 @@ int play_movement(client_t *cl, usercmd_t *ucmd)
 
 	clientframes[clientnum]++;
 
-	if (Sys_Milliseconds() - clientframetime[clientnum] >= 1000)
+	if (Sys_Milliseconds64() - clientframetime[clientnum] >= 1000)
 	{
 		if (clientframes[clientnum] > 1000)
 			clientframes[clientnum] = 1000;
 
 		clientfps[clientnum] = clientframes[clientnum];
-		clientframetime[clientnum] = Sys_Milliseconds();
+		clientframetime[clientnum] = Sys_Milliseconds64();
 		clientframes[clientnum] = 0;
 	}
 
@@ -954,7 +954,7 @@ static leakyBucket_t *SVC_BucketForAddress( netadr_t address, int burst, int per
 	leakyBucket_t *bucket = NULL;
 	int	i;
 	long hash = SVC_HashForAddress( address );
-	uint64_t now = Sys_Milliseconds();
+	uint64_t now = Sys_Milliseconds64();
 
 	for ( bucket = bucketHashes[ hash ]; bucket; bucket = bucket->next )
 	{
@@ -1023,7 +1023,7 @@ bool SVC_RateLimit( leakyBucket_t *bucket, int burst, int period )
 {
 	if ( bucket != NULL )
 	{
-		uint64_t now = Sys_Milliseconds();
+		uint64_t now = Sys_Milliseconds64();
 		int interval = now - bucket->lastTime;
 		int expired = interval / period;
 		int expiredRemainder = interval % period;
@@ -1142,6 +1142,26 @@ void hook_SV_GetChallenge(netadr_t from)
 	SV_GetChallenge(from);
 }
 
+void hook_SV_DirectConnect(netadr_t from)
+{
+	// Prevent using connect as an amplifier
+	if ( SVC_RateLimitAddress( from, 10, 1000 ) )
+	{
+		Com_DPrintf( "SV_DirectConnect: rate limit from %s exceeded, dropping request\n", NET_AdrToString( from ) );
+		return;
+	}
+
+	// Allow connect to be DoSed relatively easily, but prevent
+	// excess outbound bandwidth usage when being flooded inbound
+	if ( SVC_RateLimit( &outboundLeakyBucket, 10, 100 ) )
+	{
+		Com_DPrintf( "SV_DirectConnect: rate limit exceeded, dropping request\n" );
+		return;
+	}
+
+	SV_DirectConnect(from);
+}
+
 void hook_SVC_Info(netadr_t from)
 {
 	// Prevent using getinfo as an amplifier
@@ -1185,8 +1205,8 @@ void hook_SVC_Status(netadr_t from)
 
 void manymaps_prepare(const char *mapname, int read)
 {
-	char map_check[1024];
-	char library_path[512];
+	char map_check[MAX_OSPATH];
+	char library_path[MAX_OSPATH];
 
 	cvar_t *fs_homepath = Cvar_FindVar("fs_homepath");
 	cvar_t *fs_game = Cvar_FindVar("fs_game");
@@ -1197,7 +1217,7 @@ void manymaps_prepare(const char *mapname, int read)
 	else
 		snprintf(library_path, sizeof(library_path), "%s/%s/Library", fs_homepath->string, fs_game->string);
 
-	snprintf(map_check, sizeof(map_check), "%s/%s.iwd", library_path, mapname);
+	Com_sprintf(map_check, MAX_OSPATH, "%s/%s.iwd", library_path, mapname);
 
 #if COD_VERSION == COD2_1_0
 	const char *stock_maps[] = { "mp_breakout", "mp_brecourt", "mp_burgundy", "mp_carentan", "mp_dawnville", "mp_decoy", "mp_downtown", "mp_farmhouse", "mp_leningrad", "mp_matmata", "mp_railyard", "mp_toujane", "mp_trainstation" };
@@ -1247,8 +1267,8 @@ void manymaps_prepare(const char *mapname, int read)
 		if (strcmp(dir_ent->d_name, ".") == 0 || strcmp(dir_ent->d_name, "..") == 0)
 			continue;
 
-		char fileDelete[512];
-		snprintf(fileDelete, sizeof(fileDelete), "%s/%s/%s", fs_homepath->string, fs_game->string, dir_ent->d_name);
+		char fileDelete[MAX_OSPATH];
+		Com_sprintf(fileDelete, MAX_OSPATH, "%s/%s/%s", fs_homepath->string, fs_game->string, dir_ent->d_name);
 
 		if (access(fileDelete, F_OK) != -1)
 		{
@@ -1261,11 +1281,11 @@ void manymaps_prepare(const char *mapname, int read)
 
 	if (map_exists)
 	{
-		char src[1024];
-		char dst[512];
+		char src[MAX_OSPATH];
+		char dst[MAX_OSPATH];
 
-		snprintf(src, sizeof(src), "%s/%s.iwd", library_path, mapname);
-		snprintf(dst, sizeof(dst), "%s/%s/%s.iwd", fs_homepath->string, fs_game->string, mapname);
+		Com_sprintf(src, MAX_OSPATH, "%s/%s.iwd", library_path, mapname);
+		Com_sprintf(dst, MAX_OSPATH, "%s/%s/%s.iwd", fs_homepath->string, fs_game->string, mapname);
 
 		if (access(src, F_OK) != -1)
 		{
@@ -1299,8 +1319,8 @@ bool hook_SV_MapExists(const char *mapname)
 	}
 	else
 	{
-		char map_check[1024];
-		char library_path[512];
+		char map_check[MAX_OSPATH];
+		char library_path[MAX_OSPATH];
 
 		cvar_t *fs_homepath = Cvar_FindVar("fs_homepath");
 		cvar_t *fs_game = Cvar_FindVar("fs_game");
@@ -1309,7 +1329,7 @@ bool hook_SV_MapExists(const char *mapname)
 		else
 			snprintf(library_path, sizeof(library_path), "%s/%s/Library", fs_homepath->string, fs_game->string);
 
-		snprintf(map_check, sizeof(map_check), "%s/%s.iwd", library_path, mapname);
+		Com_sprintf(map_check, MAX_OSPATH, "%s/%s.iwd", library_path, mapname);
 
 		return access(map_check, F_OK) != -1;
 	}
@@ -1407,8 +1427,9 @@ public:
 #if COMPILE_RATELIMITER == 1
 		cracking_hook_call(0x08094081, (int)hook_SVC_Info);
 		cracking_hook_call(0x0809403E, (int)hook_SVC_Status);
-		cracking_hook_call(0x080940C4, (int)hook_SV_GetChallenge);
 		cracking_hook_call(0x08094191, (int)hook_SVC_RemoteCommand);
+		cracking_hook_call(0x080940C4, (int)hook_SV_GetChallenge);
+		cracking_hook_call(0x08094107, (int)hook_SV_DirectConnect);
 #endif
 
 #elif COD_VERSION == COD2_1_2
@@ -1480,8 +1501,9 @@ public:
 #if COMPILE_RATELIMITER == 1
 		cracking_hook_call(0x08095B8E, (int)hook_SVC_Info);
 		cracking_hook_call(0x08095ADA, (int)hook_SVC_Status);
-		cracking_hook_call(0x08095BF8, (int)hook_SV_GetChallenge);
 		cracking_hook_call(0x08095D63, (int)hook_SVC_RemoteCommand);
+		cracking_hook_call(0x08095BF8, (int)hook_SV_GetChallenge);
+		cracking_hook_call(0x08095CB2, (int)hook_SV_DirectConnect);
 #endif
 
 #elif COD_VERSION == COD2_1_3
@@ -1553,8 +1575,9 @@ public:
 #if COMPILE_RATELIMITER == 1
 		cracking_hook_call(0x08095C48, (int)hook_SVC_Info);
 		cracking_hook_call(0x08095B94, (int)hook_SVC_Status);
-		cracking_hook_call(0x08095CB2, (int)hook_SV_GetChallenge);
 		cracking_hook_call(0x08095E1D, (int)hook_SVC_RemoteCommand);
+		cracking_hook_call(0x08095CB2, (int)hook_SV_GetChallenge);
+		cracking_hook_call(0x08095D6C, (int)hook_SV_DirectConnect);
 #endif
 
 #endif
