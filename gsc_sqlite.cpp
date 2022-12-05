@@ -9,6 +9,7 @@
 #define MAX_SQLITE_ROWS 128
 #define MAX_SQLITE_ROW_LENGTH 256
 #define MAX_SQLITE_TASKS 512
+#define MAX_SQLITE_DB_STORES 64
 
 #define SQLITE_TIMEOUT 2000
 
@@ -109,7 +110,7 @@ void free_sqlite_db_stores_and_tasks()
 	pthread_mutex_unlock(&async_sqlite_mutex_lock);
 }
 
-void *async_sqlite_query_handler(void* dummy)
+void *async_sqlite_query_handler(void*)
 {
 	while(1)
 	{
@@ -124,20 +125,14 @@ void *async_sqlite_query_handler(void* dummy)
 
 			if (!task->done)
 			{
-				if (task->query != NULL)
+				task->result = sqlite3_prepare_v2(task->db, task->query, COD2_MAX_STRINGLENGTH, &task->statement, 0);
+
+				if (task->result != SQLITE_OK)
 				{
-					task->result = sqlite3_prepare_v2(task->db, task->query, COD2_MAX_STRINGLENGTH, &task->statement, 0);
-
-					if (task->result != SQLITE_OK)
-					{
-						task->error = true;
-
-						strncpy(task->errorMessage, sqlite3_errmsg(task->db), COD2_MAX_STRINGLENGTH - 1);
-						task->errorMessage[COD2_MAX_STRINGLENGTH - 1] = '\0';
-					}
-				}
-				else
 					task->error = true;
+					strncpy(task->errorMessage, sqlite3_errmsg(task->db), COD2_MAX_STRINGLENGTH - 1);
+					task->errorMessage[COD2_MAX_STRINGLENGTH - 1] = '\0';
+				}
 
 				if (!task->error)
 				{
@@ -177,21 +172,15 @@ void *async_sqlite_query_handler(void* dummy)
 						else
 						{
 							task->error = true;
-
 							strncpy(task->errorMessage, sqlite3_errmsg(task->db), COD2_MAX_STRINGLENGTH - 1);
 							task->errorMessage[COD2_MAX_STRINGLENGTH - 1] = '\0';
-
 							break;
 						}
 
 						task->result = sqlite3_step(task->statement);
 					}
 
-					if (task->statement != NULL)
-					{
-						sqlite3_finalize(task->statement);
-						task->statement = NULL;
-					}
+					sqlite3_finalize(task->statement);
 				}
 
 				task->done = true;
@@ -830,8 +819,21 @@ void gsc_sqlite_open()
 
 	sqlite_db_store *current = first_sqlite_db_store;
 
+	int store_count = 0;
+
 	while (current != NULL && current->next != NULL)
+	{
+		if (store_count >= MAX_SQLITE_DB_STORES)
+		{
+			stackError("gsc_sqlite_open() exceeded db store limit");
+			sqlite3_close(db);
+			stackPushUndefined();
+			return;
+		}
+
 		current = current->next;
+		store_count++;
+	}
 
 	sqlite_db_store *newstore = new sqlite_db_store;
 
@@ -967,6 +969,21 @@ void gsc_sqlite_escape_string()
 
 	stackPushString(result);
 	sqlite3_free(result);
+}
+
+void gsc_sqlite_databases_count()
+{
+	sqlite_db_store *current = first_sqlite_db_store;
+
+	int store_count = 0;
+
+	while (current != NULL)
+	{
+		current = current->next;
+		store_count++;
+	}
+
+	stackPushInt(store_count);
 }
 
 #endif

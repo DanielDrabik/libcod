@@ -154,6 +154,7 @@ scr_function_t scriptFunctions[] =
 	{"sqlite_query", gsc_sqlite_query, 0},
 	{"sqlite_close", gsc_sqlite_close, 0},
 	{"sqlite_escape_string", gsc_sqlite_escape_string, 0},
+	{"sqlite_databases_count", gsc_sqlite_databases_count, 0},
 	{"async_sqlite_initialize", gsc_async_sqlite_initialize, 0},
 	{"async_sqlite_create_query", gsc_async_sqlite_create_query, 0},
 	{"async_sqlite_create_query_nosave", gsc_async_sqlite_create_query_nosave, 0},
