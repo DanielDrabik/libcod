@@ -256,7 +256,7 @@ void gsc_async_sqlite_create_query()
 
 	while (current != NULL && current->next != NULL)
 	{
-		if (task_count >= MAX_SQLITE_TASKS)
+		if (task_count >= MAX_SQLITE_TASKS - 2)
 		{
 			stackError("gsc_async_sqlite_create_query() exceeded async task limit");
 			stackPushUndefined();
@@ -361,7 +361,7 @@ void gsc_async_sqlite_create_query_nosave()
 
 	while (current != NULL && current->next != NULL)
 	{
-		if (task_count >= MAX_SQLITE_TASKS)
+		if (task_count >= MAX_SQLITE_TASKS - 2)
 		{
 			stackError("gsc_async_sqlite_create_query_nosave() exceeded async task limit");
 			stackPushUndefined();
@@ -466,7 +466,7 @@ void gsc_async_sqlite_create_entity_query(scr_entref_t entid)
 
 	while (current != NULL && current->next != NULL)
 	{
-		if (task_count >= MAX_SQLITE_TASKS)
+		if (task_count >= MAX_SQLITE_TASKS - 2)
 		{
 			stackError("gsc_async_sqlite_create_entity_query() exceeded async task limit");
 			stackPushUndefined();
@@ -571,7 +571,7 @@ void gsc_async_sqlite_create_entity_query_nosave(scr_entref_t entid)
 
 	while (current != NULL && current->next != NULL)
 	{
-		if (task_count >= MAX_SQLITE_TASKS)
+		if (task_count >= MAX_SQLITE_TASKS - 2)
 		{
 			stackError("gsc_async_sqlite_create_entity_query_nosave() exceeded async task limit");
 			stackPushUndefined();
@@ -836,7 +836,7 @@ void gsc_sqlite_open()
 
 	while (current != NULL && current->next != NULL)
 	{
-		if (store_count >= MAX_SQLITE_DB_STORES)
+		if (store_count >= MAX_SQLITE_DB_STORES - 2)
 		{
 			stackError("gsc_sqlite_open() exceeded db store limit");
 			sqlite3_close(db);
