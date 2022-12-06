@@ -37,6 +37,7 @@ struct async_sqlite_task
 	bool done;
 	bool save;
 	bool error;
+	bool remove;
 	char errorMessage[COD2_MAX_STRINGLENGTH];
 	bool hasargument;
 	int valueType;
@@ -286,6 +287,7 @@ void gsc_async_sqlite_create_query()
 	newtask->done = false;
 	newtask->save = true;
 	newtask->error = false;
+	newtask->remove = false;
 	newtask->hasargument = true;
 	newtask->hasentity = false;
 	newtask->gentity = NULL;
@@ -390,6 +392,7 @@ void gsc_async_sqlite_create_query_nosave()
 	newtask->done = false;
 	newtask->save = false;
 	newtask->error = false;
+	newtask->remove = false;
 	newtask->hasargument = true;
 	newtask->hasentity = false;
 	newtask->gentity = NULL;
@@ -494,6 +497,7 @@ void gsc_async_sqlite_create_entity_query(scr_entref_t entid)
 	newtask->done = false;
 	newtask->save = true;
 	newtask->error = false;
+	newtask->remove = false;
 	newtask->hasargument = true;
 	newtask->hasentity = true;
 	newtask->gentity = &g_entities[entid];
@@ -598,6 +602,7 @@ void gsc_async_sqlite_create_entity_query_nosave(scr_entref_t entid)
 	newtask->done = false;
 	newtask->save = false;
 	newtask->error = false;
+	newtask->remove = false;
 	newtask->hasargument = true;
 	newtask->hasentity = true;
 	newtask->gentity = &g_entities[entid];
@@ -655,15 +660,71 @@ void gsc_async_sqlite_checkdone()
 		async_sqlite_task *task = current;
 		current = current->next;
 
-		if (task->done)
+		if (!task->remove)
 		{
-			if (!task->error)
+			if (task->done)
 			{
-				if (task->save && task->callback)
+				if (!task->error)
 				{
-					if (task->hasentity)
+					if (task->save && task->callback)
 					{
-						if (task->gentity != NULL)
+						if (task->hasentity)
+						{
+							if (task->gentity != NULL)
+							{
+								if (task->hasargument)
+								{
+									switch(task->valueType)
+									{
+									case INT_VALUE:
+										stackPushInt(task->intValue);
+										break;
+
+									case FLOAT_VALUE:
+										stackPushFloat(task->floatValue);
+										break;
+
+									case STRING_VALUE:
+										stackPushString(task->stringValue);
+										break;
+
+									case VECTOR_VALUE:
+										stackPushVector(task->vectorValue);
+										break;
+
+									case OBJECT_VALUE:
+										stackPushObject(task->objectValue);
+										break;
+
+									default:
+										stackPushUndefined();
+										break;
+									}
+								}
+
+								stackPushArray();
+
+								for (int i = 0; i < task->fields_size; i++)
+								{
+									stackPushArray();
+
+									for (int x = 0; x < task->rows_size; x++)
+									{
+										if (task->row[i][x] != NULL)
+										{
+											stackPushString(task->row[i][x]);
+											stackPushArrayLast();
+										}
+									}
+
+									stackPushArrayLast();
+								}
+
+								short ret = Scr_ExecEntThread(task->gentity, task->callback, task->save + task->hasargument);
+								Scr_FreeThread(ret);
+							}
+						}
+						else
 						{
 							if (task->hasargument)
 							{
@@ -685,10 +746,6 @@ void gsc_async_sqlite_checkdone()
 									stackPushVector(task->vectorValue);
 									break;
 
-								case OBJECT_VALUE:
-									stackPushObject(task->objectValue);
-									break;
-
 								default:
 									stackPushUndefined();
 									break;
@@ -703,84 +760,40 @@ void gsc_async_sqlite_checkdone()
 
 								for (int x = 0; x < task->rows_size; x++)
 								{
-									if (task->row[i][x] != NULL)
-									{
-										stackPushString(task->row[i][x]);
-										stackPushArrayLast();
-									}
+									stackPushString(task->row[i][x]);
+									stackPushArrayLast();
 								}
 
 								stackPushArrayLast();
 							}
 
-							short ret = Scr_ExecEntThread(task->gentity, task->callback, task->save + task->hasargument);
+							short ret = Scr_ExecThread(task->callback, task->save + task->hasargument);
 							Scr_FreeThread(ret);
 						}
 					}
-					else
-					{
-						if (task->hasargument)
-						{
-							switch(task->valueType)
-							{
-							case INT_VALUE:
-								stackPushInt(task->intValue);
-								break;
-
-							case FLOAT_VALUE:
-								stackPushFloat(task->floatValue);
-								break;
-
-							case STRING_VALUE:
-								stackPushString(task->stringValue);
-								break;
-
-							case VECTOR_VALUE:
-								stackPushVector(task->vectorValue);
-								break;
-
-							default:
-								stackPushUndefined();
-								break;
-							}
-						}
-
-						stackPushArray();
-
-						for (int i = 0; i < task->fields_size; i++)
-						{
-							stackPushArray();
-
-							for (int x = 0; x < task->rows_size; x++)
-							{
-								stackPushString(task->row[i][x]);
-								stackPushArrayLast();
-							}
-
-							stackPushArrayLast();
-						}
-
-						short ret = Scr_ExecThread(task->callback, task->save + task->hasargument);
-						Scr_FreeThread(ret);
-					}
 				}
+				else if (task->query && task->errorMessage)
+					stackError("gsc_async_sqlite_checkdone() query error in '%s' - '%s'", task->query, task->errorMessage);
+
+				task->remove = true;
 			}
-			else if (task->query && task->errorMessage)
-				stackError("gsc_async_sqlite_checkdone() query error in '%s' - '%s'", task->query, task->errorMessage);
+		}
+		else
+		{
+			if (pthread_mutex_trylock(&async_sqlite_mutex_lock) == 0)
+			{
+				if (task->next != NULL)
+					task->next->prev = task->prev;
 
-			pthread_mutex_lock(&async_sqlite_mutex_lock);
+				if (task->prev != NULL)
+					task->prev->next = task->next;
+				else
+					first_async_sqlite_task = task->next;
 
-			if (task->next != NULL)
-				task->next->prev = task->prev;
+				delete task;
 
-			if (task->prev != NULL)
-				task->prev->next = task->next;
-			else
-				first_async_sqlite_task = task->next;
-
-			delete task;
-
-			pthread_mutex_unlock(&async_sqlite_mutex_lock);
+				pthread_mutex_unlock(&async_sqlite_mutex_lock);
+			}
 		}
 	}
 }
@@ -984,6 +997,21 @@ void gsc_sqlite_databases_count()
 	}
 
 	stackPushInt(store_count);
+}
+
+void gsc_sqlite_tasks_count()
+{
+	async_sqlite_task *current = first_async_sqlite_task;
+
+	int task_count = 0;
+
+	while (current != NULL)
+	{
+		current = current->next;
+		task_count++;
+	}
+
+	stackPushInt(task_count);
 }
 
 #endif
