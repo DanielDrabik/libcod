@@ -118,6 +118,10 @@
 #define stackPushArrayLast Scr_AddArray
 #define stackPushObject Scr_AddObject
 
+#ifndef Q_vsnprintf
+int Q_vsnprintf(char *s0, size_t size, const char *fmt, va_list args);
+#endif
+
 int stackGetParamType(int param);
 const char *stackGetParamTypeAsString(int param);
 

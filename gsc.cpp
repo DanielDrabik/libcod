@@ -386,7 +386,7 @@ void stackError(const char *format, ...)
 	va_list va;
 
 	va_start(va, format);
-	vsnprintf(errorMessage, sizeof(errorMessage), format, va);
+	Q_vsnprintf(errorMessage, sizeof(errorMessage), format, va);
 	va_end(va);
 
 	errorMessage[COD2_MAX_STRINGLENGTH - 1] = '\0';

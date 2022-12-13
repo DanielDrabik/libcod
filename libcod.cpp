@@ -34,7 +34,7 @@ void hook_sv_init(const char *format, ...)
 	va_list va;
 
 	va_start(va, format);
-	vsnprintf(s, sizeof(s), format, va);
+	Q_vsnprintf(s, sizeof(s), format, va);
 	va_end(va);
 
 	Com_Printf("%s", s);
@@ -91,7 +91,7 @@ void hook_sv_spawnserver(const char *format, ...)
 	va_list va;
 
 	va_start(va, format);
-	vsnprintf(s, sizeof(s), format, va);
+	Q_vsnprintf(s, sizeof(s), format, va);
 	va_end(va);
 
 	Com_Printf("%s", s);
@@ -603,7 +603,7 @@ char *custom_va(const char *format, ...)
 	info->index = (info->index + 1) % MAX_VASTRINGS;
 
 	va_start(va, format);
-	vsnprintf(info->va_string[index], sizeof(info->va_string[0]), format, va);
+	Q_vsnprintf(info->va_string[index], sizeof(info->va_string[0]), format, va);
 	va_end(va);
 
 	info->va_string[index][1023] = 0;
@@ -786,7 +786,7 @@ void hook_gamestate_info(const char *format, ...)
 	va_list va;
 
 	va_start(va, format);
-	vsnprintf(s, sizeof(s), format, va);
+	Q_vsnprintf(s, sizeof(s), format, va);
 	va_end(va);
 
 	Com_DPrintf("%s", s);
