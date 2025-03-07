@@ -3,7 +3,7 @@ name: Build binary files
 on:
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   build:
