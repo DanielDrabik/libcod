@@ -970,6 +970,36 @@ void gsc_utils_remove_file()
 	stackPushInt(remove( filename ));
 }
 
+void gsc_utils_hash()
+{
+	char *str;
+
+	if (!stackGetParams("s", &str))
+	{
+		stackError("gsc_utils_hash() argument is undefined or has a wrong type");
+		stackPushUndefined();
+		return;
+	}
+
+	if (!strlen(str))
+	{
+		stackError("gsc_utils_hash() string length is 0");
+		stackPushUndefined();
+		return;
+	}
+
+	unsigned long hash = 5381;
+	int c;
+	while ((c = *str++))
+	{
+		hash = ((hash << 5) + hash) + c; // hash * 33 + c
+	}
+
+	sprintf(str, "%lx", hash);
+
+	stackPushString(str);
+}
+
 void gsc_utils_remotecommand()
 {
 	char * sFrom;
