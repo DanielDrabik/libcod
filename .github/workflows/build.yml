@@ -36,3 +36,9 @@ jobs:
             echo "Build failed: bin/lib${{ matrix.target }}.so not found"
             exit 1
           fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lib${{ matrix.cod_version }}
+          path: bin/lib${{ matrix.cod_version }}.so
