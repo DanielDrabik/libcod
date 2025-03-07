@@ -40,5 +40,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lib${{ matrix.cod_version }}
-          path: bin/lib${{ matrix.cod_version }}.so
+          name: lib${{ matrix.target }}
+          path: bin/lib${{ matrix.target }}.so
