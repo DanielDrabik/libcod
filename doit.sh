@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+set -o pipefail
 
 # ./doit.sh clean
 # ./doit.sh cod2_1_0
