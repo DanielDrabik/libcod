@@ -30,4 +30,4 @@ jobs:
         with:
           context: ./automation
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/automation:${{ steps.vars.outputs.short_sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/libcod-build-environment:${{ steps.vars.outputs.short_sha }}
