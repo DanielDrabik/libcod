@@ -1,4 +1,4 @@
-FROM debian:buster-20210311-slim
+FROM debian:bullseye-slim
 
 RUN dpkg --add-architecture i386 && apt-get update
 
