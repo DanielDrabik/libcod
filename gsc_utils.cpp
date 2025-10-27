@@ -1,4 +1,5 @@
 #include "gsc_utils.hpp"
+#include "md5.h"
 
 #if COMPILE_UTILS == 1
 
@@ -988,16 +989,8 @@ void gsc_utils_hash()
 		return;
 	}
 
-	unsigned long hash = 5381;
-	int c;
-	while ((c = *str++))
-	{
-		hash = ((hash << 5) + hash) + c; // hash * 33 + c
-	}
 
-	sprintf(str, "%lx", hash);
-
-	stackPushString(str);
+	stackPushString(md5(str).c_str());
 }
 
 void gsc_utils_remotecommand()
