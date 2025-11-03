@@ -9,6 +9,7 @@ set -o pipefail
 
 cc="g++"
 options="-I. -m32 -fPIC -Wall"
+options="$options -D_GLIBCXX_USE_CXX11_ABI=0"
 
 mysql_found=0
 mysql_link=""
@@ -165,6 +166,9 @@ if [ "$(< config.hpp grep '#define COMPILE_JUMP' | grep -o '[0-9]')" == "1" ]; t
 	echo "##### COMPILE $1 JUMP.CPP #####"
 	$cc $options $constants -c jump.cpp -o objects_"$1"/jump.opp
 fi
+
+echo "##### COMPILE $1 MD5.CPP #####"
+$cc $options -D_GLIBCXX_USE_CXX11_ABI=0 $constants -c md5.cpp -o objects_"$1"/md5.opp
 
 echo "##### COMPILE $1 LIBCOD.CPP #####"
 $cc $options $constants -c libcod.cpp -o objects_"$1"/libcod.opp
